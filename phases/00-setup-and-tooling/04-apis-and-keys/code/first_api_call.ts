@@ -1,7 +1,8 @@
-// Phase 0 · Lesson 04 — APIs and keys (TypeScript port).
-// Reads ANTHROPIC_API_KEY from env, parses a minimal .env file, then makes one
-// /v1/messages call with global fetch. Set MOCK=1 to skip the network entirely.
-// Refs: https://docs.anthropic.com/en/api/messages
+// Phase 0 · Lesson 04 — APIs and keys (TypeScript port, Hugging Face).
+// Reads HF_TOKEN from env, parses a minimal .env file, then makes one
+// chat-completions call with global fetch to the free Inference API.
+// Set MOCK=1 to skip the network entirely.
+// Refs: https://huggingface.co/docs/api-inference
 //       https://nodejs.org/api/process.html#processenv
 //       https://nodejs.org/api/globals.html#fetch (Node 18+ ships fetch)
 
@@ -10,15 +11,15 @@ import { resolve } from "node:path";
 import process from "node:process";
 
 
-type MessagesRequest = {
+type ChatRequest = {
   model: string;
   max_tokens: number;
   messages: { role: "user" | "assistant"; content: string }[];
 };
 
-type MessagesResponse = {
-  content: { type: string; text: string }[];
-  usage: { input_tokens: number; output_tokens: number };
+type ChatResponse = {
+  choices: { message: { content: string } }[];
+  usage: { prompt_tokens: number; completion_tokens: number };
 };
 
 // .env loader. Same shape every framework follows; we skip a dep to stay
@@ -55,65 +56,65 @@ function mergeEnv(): NodeJS.ProcessEnv {
   return { ...fromFile, ...process.env };
 }
 
-// Fixture matches the real /v1/messages response shape, so the surrounding
-// code is identical whether MOCK=1 or not.
-const MOCK_RESPONSE: MessagesResponse = {
-  content: [
+// Fixture matches the real chat-completions response shape, so the
+// surrounding code is identical whether MOCK=1 or not.
+const MOCK_RESPONSE: ChatResponse = {
+  choices: [
     {
-      type: "text",
-      text: "A neural network is a stack of differentiable functions that learns patterns by adjusting weights against a loss signal.",
+      message: {
+        content: "A neural network is a stack of differentiable functions that learns patterns by adjusting weights against a loss signal.",
+      },
     },
   ],
-  usage: { input_tokens: 12, output_tokens: 28 },
+  usage: { prompt_tokens: 12, completion_tokens: 28 },
 };
 
-async function callMessages(apiKey: string, request: MessagesRequest): Promise<MessagesResponse> {
+async function callChat(apiKey: string, request: ChatRequest): Promise<ChatResponse> {
   if (process.env.MOCK === "1" || apiKey === "mock") {
     return MOCK_RESPONSE;
   }
 
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+  const resp = await fetch("https://router.huggingface.co/v1/chat/completions", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      "authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify(request),
   });
 
   if (!resp.ok) {
     const body = await resp.text();
-    throw new Error(`anthropic ${resp.status}: ${body.slice(0, 200)}`);
+    throw new Error(`huggingface ${resp.status}: ${body.slice(0, 200)}`);
   }
-  return (await resp.json()) as MessagesResponse;
+  return (await resp.json()) as ChatResponse;
 }
 
 async function main(): Promise<number> {
   const env = mergeEnv();
-  const model = (env.LLM_MODEL ?? "").trim() || "claude-sonnet-5";
-  const apiKey = env.ANTHROPIC_API_KEY ?? "mock";
+  const model = (env.LLM_MODEL ?? "").trim() || "Qwen/Qwen2.5-7B-Instruct";
+  const apiKey = env.HF_TOKEN ?? "mock";
   const usingMock = process.env.MOCK === "1" || apiKey === "mock";
 
   process.stdout.write("=== API Calls ===\n\n");
   process.stdout.write(
     usingMock
-      ? "Mode: MOCK (no network). Unset MOCK and export ANTHROPIC_API_KEY for a live call.\n\n"
+      ? "Mode: MOCK (no network). Unset MOCK and export HF_TOKEN for a live call.\n\n"
       : "Mode: LIVE.\n\n",
   );
 
-  const request: MessagesRequest = {
+  const request: ChatRequest = {
     model,
     max_tokens: 256,
     messages: [{ role: "user", content: "What is a neural network in one sentence?" }],
   };
 
   try {
-    const response = await callMessages(apiKey, request);
-    const text = response.content[0]?.text ?? "";
+    const response = await callChat(apiKey, request);
+    const text = response.choices[0]?.message.content ?? "";
     process.stdout.write(`response: ${text}\n`);
     process.stdout.write(
-      `tokens: ${response.usage.input_tokens} in, ${response.usage.output_tokens} out\n`,
+      `tokens: ${response.usage.prompt_tokens} in, ${response.usage.completion_tokens} out\n`,
     );
     return 0;
   } catch (err) {
