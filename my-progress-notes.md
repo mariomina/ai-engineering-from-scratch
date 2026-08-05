@@ -1,6 +1,8 @@
 mariomina - progreso Fase 00
-Lesson 01 (Dev Environment): completada - Python 3.12, Node 22, Rust, Julia, verify.py/main.rs/verify.ts todos en verde.
-Lesson 02 (Git & Collaboration): en curso - docs + quiz listos, falta code/ y tests.
-Lesson 03 (GPU Setup & Cloud): pendiente.
-Lesson 04 (APIs & Keys): completada - adaptada a Hugging Face Inference API (first_api_call.py / .ts).
-Lesson 05 (Jupyter Notebooks): completada - ejercicios timeit, csv_plot y trap de notebooks + colab_exercise.py.
+Lesson 01 (Dev Environment): completada - Python 3.12, Node 22, Rust, Julia, verify.py 7/7 core + main.rs 5/5 req 3/3 opt en verde.
+Lesson 02 (Git & Collaboration): completada - Learn, solo docs + quiz (sin code/, así por diseño).
+Lesson 03 (GPU Setup & Cloud): completada - gpu_check.py exit 0; sin GPU local, se usa CPU/Colab. No pide artefacto.
+Lesson 04 (APIs & Keys): completada - adaptada a Hugging Face Inference API; llamada REAL en vivo verificada (py SDK + raw HTTP + ts, 38/31 tokens, exit 0). HF_TOKEN en .env raiz.
+Lesson 05 (Jupyter Notebooks): completada - 3 notebooks JSON validos + notebook_tips.py exit 0.
+Lesson 06 (Python Environments): completada - env_setup.sh en verde (numpy 2.5.1, matplotlib 3.11.1, sklearn 1.9.0, pandas 3.0.5, jupyter 5.9.1 en .venv raiz); aislamiento numpy 2.5.1 vs 1.26.4 comprobado; .venv no se commitea. Artefacto: outputs/prompt-env-manager.md agregado.
+Lesson 07 (Docker for AI): completada (adaptada a CPU) - Docker Engine 29.7.1 en WSL2 (no Desktop, minimo RAM). Ej 1: imagen ai-dev-cpu (python:3.12-slim) + torch 2.6.0+cpu. Ej 2: compose + qdrant responde en http://qdrant:6333/collections. Ej 3: flask server en :5000 (200 OK). Ej 4: tamano 3.16 GB (slim) vs ~6 GB CUDA del curso. Creados Dockerfile.cpu, docker-compose.cpu.yml, app.py (sin tocar originales del curso). .wslconfig creado (memory=5GB + autoMemoryReclaim=gradual) PENDIENTE de activar con wsl --shutdown cuando termine tmux.

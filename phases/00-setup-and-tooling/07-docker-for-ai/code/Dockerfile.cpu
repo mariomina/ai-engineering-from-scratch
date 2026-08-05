@@ -1,0 +1,49 @@
+# Phase 0 · Lesson 07 — Docker for AI (CPU adaptation).
+# Based on the course's code/Dockerfile, adapted for machines without an
+# NVIDIA GPU per the lesson's "No GPU?" section in docs/en.md:
+#   "Remove the --gpus all flag and the NVIDIA deploy block.
+#    The container still works for CPU-based lessons."
+# Changes vs the original:
+#   - Base image nvidia/cuda:12.4.1-devel-ubuntu22.04 -> python:3.12-slim
+#     (a ~4 GB CUDA image becomes ~150 MB CPU base; python + pip included).
+#   - Removed the manual python3.12 + get-pip install steps (already present).
+#   - torch installed from the CPU wheel index (no +cu124, no CUDA runtime).
+
+FROM python:3.12-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+RUN python -m pip install --no-cache-dir \
+    torch==2.6.0 \
+    torchvision==0.21.0 \
+    torchaudio==2.6.0 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+RUN python -m pip install --no-cache-dir \
+    numpy \
+    pandas \
+    scikit-learn \
+    matplotlib \
+    jupyter \
+    transformers \
+    datasets \
+    accelerate \
+    safetensors \
+    flask
+
+WORKDIR /workspace
+
+VOLUME ["/workspace", "/models"]
+
+EXPOSE 8888
+
+CMD ["python"]
